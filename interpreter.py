@@ -96,20 +96,21 @@ class Interpreter():
         elif node.data == 'def_stmt':
             self.symbol_table[node.children[0]] = self.interpret_ast(node.children[1], local_symbol_table)
         elif node.data == 'fun_exp':
-            return FunctionExpression(node.children[0].children, node.children[1].children)
+            return FunctionExpression(node.children[0].children, node.children[1].children[0])
         elif node.data == 'fun_call':
             # func_exp == node
             fun_exp = self.interpret_ast(node.children[0], local_symbol_table)
-            fun_symbol_table = dict()
-            for i in range(len(node.children) - 1):
-                fun_symbol_table[fun_exp.fun_args[i]] = self.interpret_ast(node.children[i+1], local_symbol_table)
-            # ret = list()
-            # for child in node.children:
-            #     result = self.interpret_ast(child, fun_symbol_table)
-            #     if isinstance(result, str):
-            #         ret.append(result)
-            # return ret
-            return self.interpret_ast(fun_exp.fun_body[0], fun_symbol_table)
+            if isinstance(fun_exp, FunctionExpression):
+                fun_symbol_table = dict()
+                for i in range(len(node.children) - 1):
+                    fun_symbol_table[fun_exp.fun_args[i]] = self.interpret_ast(node.children[i+1], local_symbol_table)
+                return self.interpret_ast(fun_exp.fun_body, fun_symbol_table)
+            else:
+                def_fun_exp = self.interpret_ast(fun_exp)
+                fun_symbol_table = dict()
+                for i in range(len(node.children) - 1):
+                    fun_symbol_table[def_fun_exp.fun_args[i]] = self.interpret_ast(node.children[i+1], local_symbol_table)
+                return self.interpret_ast(def_fun_exp.fun_body, fun_symbol_table)
 
     def print_num(self, node):
         return str(self.interpret_ast(node))
