@@ -8,6 +8,7 @@ class Interpreter():
         with open('grammar.lark') as larkfile:
             self.parser = Lark(larkfile, start='program',
                                parser='lalr', lexer='contextual')
+        self.symbol_table = dict()
 
     def interpret(self, code):
         try:
@@ -25,6 +26,10 @@ class Interpreter():
                 return True
             elif node == '#f':
                 return False
+            elif node.type == 'ID':
+                if node.value not in self.symbol_table:
+                    raise Exception(f'variable {node.value} not define')
+                return self.symbol_table[node.value]
             return int(node)
                 
         elif node.data == 'program':
@@ -86,6 +91,8 @@ class Interpreter():
             return self.interpret_ast(node.children[0]) < self.interpret_ast(node.children[1])
         elif node.data == 'greater':
             return self.interpret_ast(node.children[0]) > self.interpret_ast(node.children[1])
+        elif node.data == 'def_stmt':
+            self.symbol_table[node.children[0]] = self.interpret_ast(node.children[1])
 
     def print_num(self, node):
         return str(self.interpret_ast(node))
