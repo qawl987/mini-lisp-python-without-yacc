@@ -1,7 +1,8 @@
 from lark import Lark, UnexpectedInput, UnexpectedToken, UnexpectedCharacters
 import lark
 from math import prod
-
+class typeError(BaseException):
+    pass
 class Interpreter():
     def __init__(self) -> None:
         self.tree = None
@@ -13,8 +14,8 @@ class Interpreter():
     def interpret(self, code):
         try:
             self.tree = self.parser.parse(code)
-            print(self.tree.pretty())
-            print(self.tree)
+            # print(self.tree.pretty())
+            # print(self.tree)
         except (UnexpectedInput, UnexpectedToken, UnexpectedCharacters) as exception:
             raise SyntaxError('Mini-lisp syntax error.') from exception
         return self.interpret_ast(self.tree)
@@ -33,7 +34,6 @@ class Interpreter():
                     raise Exception(f'variable {node.value} not define')
                 return self.symbol_table[node.value]
             return int(node)
-        
         elif node.data == 'program':
             ret = list()
             for child in node.children:
@@ -49,19 +49,27 @@ class Interpreter():
         elif node.data == 'plus':
             result = []
             for child in node.children:
-                result.append(self.interpret_ast(child, local_symbol_table))
+                num = self.number_type_checker(self.interpret_ast(child, local_symbol_table))
+                result.append(num)
             return sum(result)
         elif node.data == 'minus':
-            return self.interpret_ast(node.children[0], local_symbol_table) - self.interpret_ast(node.children[1], local_symbol_table)
+            num1 = self.number_type_checker(self.interpret_ast(node.children[0], local_symbol_table))
+            num2 = self.number_type_checker(self.interpret_ast(node.children[1], local_symbol_table))
+            return num1 - num2
         elif node.data == 'multiply':
             result = []
             for child in node.children:
-                result.append(self.interpret_ast(child, local_symbol_table))
+                num = self.number_type_checker(self.interpret_ast(child, local_symbol_table))
+                result.append(num)
             return prod(result)
         elif node.data == 'divide':
-            return int(self.interpret_ast(node.children[0], local_symbol_table) / self.interpret_ast(node.children[1], local_symbol_table))
+            num1 = self.number_type_checker(self.interpret_ast(node.children[0], local_symbol_table))
+            num2 = self.number_type_checker(self.interpret_ast(node.children[1], local_symbol_table))
+            return int(num1 / num2)
         elif node.data == 'modulus':
-            return self.interpret_ast(node.children[0], local_symbol_table) % self.interpret_ast(node.children[1], local_symbol_table)
+            num1 = self.number_type_checker(self.interpret_ast(node.children[0], local_symbol_table))
+            num2 = self.number_type_checker(self.interpret_ast(node.children[1], local_symbol_table))
+            return num1 % num2
         elif node.data == 'and_op':
             result = []
             for child in node.children:
@@ -115,6 +123,11 @@ class Interpreter():
     def print_num(self, node):
         return str(self.interpret_ast(node))
 
+    @staticmethod
+    def number_type_checker(num):
+        if not type(num) is int:  # pylint: disable=unidiomatic-typecheck
+            raise TypeError("Expect 'number' but got 'boolean'.")
+        return num
 class FunctionExpression():
     def __init__(self, fun_args, fun_body):
         self.fun_args = fun_args
