@@ -21,7 +21,12 @@ class Interpreter():
     def interpret_ast(self, node):
         if node.__class__ == lark.lexer.Token:
             # TODO
+            if node == '#t':
+                return True
+            elif node == '#f':
+                return False
             return int(node)
+                
         elif node.data == 'program':
             ret = list()
             for child in node.children:
@@ -31,6 +36,8 @@ class Interpreter():
             return ret
         elif node.data == 'print_num':
             # print_num children 只有一個list
+            return self.print_num(node.children[0])
+        elif node.data == 'print_bool':
             return self.print_num(node.children[0])
         elif node.data == 'plus':
             result = []
@@ -48,6 +55,20 @@ class Interpreter():
             return int(self.interpret_ast(node.children[0]) / self.interpret_ast(node.children[1]))
         elif node.data == 'modulus':
             return self.interpret_ast(node.children[0]) % self.interpret_ast(node.children[1])
+        elif node.data == 'and_op':
+            result = []
+            for child in node.children:
+                result.append(self.interpret_ast(child))
+            return all(result)
+        elif node.data == 'or_op':
+            result = []
+            for child in node.children:
+                result.append(self.interpret_ast(child))
+            return any(result)
+        elif node.data == 'not_op':
+            return not self.interpret_ast(node.children[0])
+        elif node.data == 'equal':
+            pass
         elif node.data == 'smaller':
             pass
         elif node.data == 'equal':
