@@ -1,5 +1,7 @@
 from lark import Lark, UnexpectedInput, UnexpectedToken, UnexpectedCharacters
 import lark
+from math import prod
+
 class Interpreter():
     def __init__(self) -> None:
         self.tree = None
@@ -10,8 +12,8 @@ class Interpreter():
     def interpret(self, code):
         try:
             self.tree = self.parser.parse(code)
-            # print(self.tree.pretty())
-            # print(self.tree)
+            print(self.tree.pretty())
+            print(self.tree)
         except (UnexpectedInput, UnexpectedToken, UnexpectedCharacters) as exception:
             raise SyntaxError('Mini-lisp syntax error.') from exception
         return self.interpret_ast(self.tree)
@@ -24,7 +26,8 @@ class Interpreter():
             ret = list()
             for child in node.children:
                 result = self.interpret_ast(child)
-                ret.append(result)
+                if isinstance(result, str):
+                    ret.append(result)
             return ret
         elif node.data == 'print_num':
             # print_num children 只有一個list
@@ -35,17 +38,20 @@ class Interpreter():
                 result.append(self.interpret_ast(child))
             return sum(result)
         elif node.data == 'minus':
-            pass
+            return self.interpret_ast(node.children[0]) - self.interpret_ast(node.children[1])
         elif node.data == 'multiply':
-            pass
+            result = []
+            for child in node.children:
+                result.append(self.interpret_ast(child))
+            return prod(result)
+        elif node.data == 'divide':
+            return int(self.interpret_ast(node.children[0]) / self.interpret_ast(node.children[1]))
         elif node.data == 'modulus':
-            pass
-        elif node.data == 'greater':
-            pass
+            return self.interpret_ast(node.children[0]) % self.interpret_ast(node.children[1])
         elif node.data == 'smaller':
             pass
         elif node.data == 'equal':
             pass
 
     def print_num(self, node):
-        return self.interpret_ast(node)
+        return str(self.interpret_ast(node))
