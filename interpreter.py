@@ -30,9 +30,9 @@ class Interpreter():
         elif node.data == 'program':
             ret = list()
             for child in node.children:
-                result = self.interpret_ast(child)
-                if isinstance(result, str):
-                    ret.append(result)
+                comparison = self.interpret_ast(child)
+                if isinstance(comparison, str):
+                    ret.append(comparison)
             return ret
         elif node.data == 'print_num':
             # print_num children 只有一個list
@@ -40,39 +40,52 @@ class Interpreter():
         elif node.data == 'print_bool':
             return self.print_num(node.children[0])
         elif node.data == 'plus':
-            result = []
+            comparison = []
             for child in node.children:
-                result.append(self.interpret_ast(child))
-            return sum(result)
+                comparison.append(self.interpret_ast(child))
+            return sum(comparison)
         elif node.data == 'minus':
             return self.interpret_ast(node.children[0]) - self.interpret_ast(node.children[1])
         elif node.data == 'multiply':
-            result = []
+            comparison = []
             for child in node.children:
-                result.append(self.interpret_ast(child))
-            return prod(result)
+                comparison.append(self.interpret_ast(child))
+            return prod(comparison)
         elif node.data == 'divide':
             return int(self.interpret_ast(node.children[0]) / self.interpret_ast(node.children[1]))
         elif node.data == 'modulus':
             return self.interpret_ast(node.children[0]) % self.interpret_ast(node.children[1])
         elif node.data == 'and_op':
-            result = []
+            comparison = []
             for child in node.children:
-                result.append(self.interpret_ast(child))
-            return all(result)
+                comparison.append(self.interpret_ast(child))
+            return all(comparison)
         elif node.data == 'or_op':
-            result = []
+            comparison = []
             for child in node.children:
-                result.append(self.interpret_ast(child))
-            return any(result)
+                comparison.append(self.interpret_ast(child))
+            return any(comparison)
         elif node.data == 'not_op':
             return not self.interpret_ast(node.children[0])
+        elif node.data == 'if_exp':
+            condition = self.interpret_ast(node.children[0])
+            if condition:
+                return self.interpret_ast(node.children[1])
+            else:
+                return self.interpret_ast(node.children[2])
         elif node.data == 'equal':
-            pass
+            comparison = (self.interpret_ast(node.children[0]))
+            flag = True
+            for child in node.children[1:]:
+                # TODO: type checking
+                if comparison != self.interpret_ast(child):
+                    flag = False
+                    break
+            return flag
         elif node.data == 'smaller':
-            pass
-        elif node.data == 'equal':
-            pass
+            return self.interpret_ast(node.children[0]) < self.interpret_ast(node.children[1])
+        elif node.data == 'greater':
+            return self.interpret_ast(node.children[0]) > self.interpret_ast(node.children[1])
 
     def print_num(self, node):
         return str(self.interpret_ast(node))
