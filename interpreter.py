@@ -21,6 +21,7 @@ class Interpreter():
         return self.interpret_ast(self.tree)
 
     def interpret_ast(self, node, local_symbol_table=dict()):
+        # 將node分為tree與token
         if node.__class__ == lark.lexer.Token:
             # TODO
             if node == '#t':
@@ -28,6 +29,8 @@ class Interpreter():
             elif node == '#f':
                 return False
             elif node.type == 'ID':
+                # ID代表是define variable 或 define function name
+                # 若local找不到去global找，若global也找不到代表沒定義
                 if node.value in local_symbol_table:
                     return local_symbol_table[node.value]
                 if node.value not in self.symbol_table:
@@ -36,8 +39,10 @@ class Interpreter():
             return int(node)
         elif node.data == 'program':
             ret = list()
+            # 遞迴解析children
             for child in node.children:
                 result = self.interpret_ast(child)
+                # 只有經過print_num()才會回傳字串才會加到輸出中
                 if isinstance(result, str):
                     ret.append(result)
             return ret
@@ -102,25 +107,36 @@ class Interpreter():
         elif node.data == 'greater':
             return self.interpret_ast(node.children[0], local_symbol_table) > self.interpret_ast(node.children[1], local_symbol_table)
         elif node.data == 'def_stmt':
+            # 左邊是變數名 右邊可以是 int bool 也可以是 function pointer
             self.symbol_table[node.children[0]] = self.interpret_ast(node.children[1], local_symbol_table)
         elif node.data == 'fun_exp':
+            # 第一個是function argument,第二個是function body
+            # 取children[0].children 因為 此時node為 Tree(Token('RULE', 'fun_ids'), [Token('ID', 'x')])
+            # 取children[1].children 同上 Tree(Token('RULE', 'fun_body'), [Tree(Token('RULE', 'plus'), [Token('ID', 'x'), Token('SIGNED_INT', '1')])])
+            # 取children[1].children[0] 因為 children為list 且必只有一個element: exp所以可取[0]
+            # 參數定義 以及 function內容存到 function class，且不經解析 因為目前參數內容未知無法解析
             return FunctionExpression(node.children[0].children, node.children[1].children[0])
         elif node.data == 'fun_call':
-            # func_exp == node
+            # fun_exp 可以是一個function class也就是匿名函式
+            # 也可以是 function name在else從table中取得function pointer
             fun_exp = self.interpret_ast(node.children[0], local_symbol_table)
             if isinstance(fun_exp, FunctionExpression):
+                # 如果是匿名函式 則node.children[0]以後為所有參數的值，所以將fun_call的變數值與fun_args的變數值對應
+                # 最後將fun_body與做好的function_symbol_table一起解析，代表fun_body現在有各個入參的定義了
                 fun_symbol_table = dict()
                 for i in range(len(node.children) - 1):
                     fun_symbol_table[fun_exp.fun_args[i]] = self.interpret_ast(node.children[i+1], local_symbol_table)
                 return self.interpret_ast(fun_exp.fun_body, fun_symbol_table)
             else:
-                def_fun_exp = self.interpret_ast(fun_exp)
+                # 若為function名稱 則將dict 中的 function pointer取出
+                def_fun_exp = self.interpret_ast(fun_exp, local_symbol_table)
                 fun_symbol_table = dict()
                 for i in range(len(node.children) - 1):
                     fun_symbol_table[def_fun_exp.fun_args[i]] = self.interpret_ast(node.children[i+1], local_symbol_table)
                 return self.interpret_ast(def_fun_exp.fun_body, fun_symbol_table)
 
     def print_num(self, node):
+        # 回傳字串而非數字辨別哪些是要得output哪些是假輸出
         return str(self.interpret_ast(node))
 
     @staticmethod
