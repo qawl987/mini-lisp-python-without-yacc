@@ -78,34 +78,34 @@ class Interpreter():
         elif node.data == 'and_op':
             result = []
             for child in node.children:
-                result.append(self.interpret_ast(child, local_symbol_table))
+                result.append(self.boolean_type_checker(self.interpret_ast(child, local_symbol_table)))
             return all(result)
         elif node.data == 'or_op':
             result = []
             for child in node.children:
-                result.append(self.interpret_ast(child, local_symbol_table))
+                result.append(self.boolean_type_checker(self.interpret_ast(child, local_symbol_table)))
             return any(result)
         elif node.data == 'not_op':
-            return not self.interpret_ast(node.children[0], local_symbol_table)
+            return not self.boolean_type_checker(self.interpret_ast(node.children[0], local_symbol_table))
         elif node.data == 'if_exp':
-            condition = self.interpret_ast(node.children[0], local_symbol_table)
+            condition = self.boolean_type_checker(self.interpret_ast(node.children[0], local_symbol_table))
             if condition:
                 return self.interpret_ast(node.children[1], local_symbol_table)
             else:
                 return self.interpret_ast(node.children[2], local_symbol_table)
         elif node.data == 'equal':
-            comparison = self.interpret_ast(node.children[0], local_symbol_table)
+            comparison = self.number_type_checker(self.interpret_ast(node.children[0], local_symbol_table))
             flag = True
             for child in node.children[1:]:
                 # TODO: type checking
-                if comparison != self.interpret_ast(child, local_symbol_table):
+                if comparison != self.number_type_checker(self.interpret_ast(child, local_symbol_table)):
                     flag = False
                     break
             return flag
         elif node.data == 'smaller':
-            return self.interpret_ast(node.children[0], local_symbol_table) < self.interpret_ast(node.children[1], local_symbol_table)
+            return self.number_type_checker(self.interpret_ast(node.children[0], local_symbol_table)) < self.number_type_checker(self.interpret_ast(node.children[1], local_symbol_table))
         elif node.data == 'greater':
-            return self.interpret_ast(node.children[0], local_symbol_table) > self.interpret_ast(node.children[1], local_symbol_table)
+            return self.number_type_checker(self.interpret_ast(node.children[0], local_symbol_table)) > self.number_type_checker(self.interpret_ast(node.children[1], local_symbol_table))
         elif node.data == 'def_stmt':
             # 左邊是變數名 右邊可以是 int bool 也可以是 function pointer
             self.symbol_table[node.children[0]] = self.interpret_ast(node.children[1], local_symbol_table)
@@ -144,6 +144,11 @@ class Interpreter():
         if not type(num) is int:
             raise TypeError("Expect 'number' but got 'boolean'.")
         return num
+    @staticmethod
+    def boolean_type_checker(boolean):
+        if not type(boolean) is bool:
+            raise TypeError("Expect 'boolean' but got 'number'.")
+        return boolean
 class FunctionExpression():
     def __init__(self, fun_args, fun_body):
         self.fun_args = fun_args
