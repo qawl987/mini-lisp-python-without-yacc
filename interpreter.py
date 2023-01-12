@@ -94,7 +94,7 @@ class Interpreter():
             else:
                 return self.interpret_ast(node.children[2], local_symbol_table)
         elif node.data == 'equal':
-            comparison = (self.interpret_ast(node.children[0]), local_symbol_table)
+            comparison = self.interpret_ast(node.children[0], local_symbol_table)
             flag = True
             for child in node.children[1:]:
                 # TODO: type checking
@@ -141,7 +141,7 @@ class Interpreter():
 
     @staticmethod
     def number_type_checker(num):
-        if not type(num) is int:  # pylint: disable=unidiomatic-typecheck
+        if not type(num) is int:
             raise TypeError("Expect 'number' but got 'boolean'.")
         return num
 class FunctionExpression():
